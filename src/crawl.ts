@@ -9,16 +9,17 @@ export const crawlPage = async (
     const links = getURLsFromHTML(curr, base);
 
     // Base case
-    if (curr != base) {
-        console.log("Base case -- returning")
+    if (! curr.startsWith(base)) {
+        //console.log("Base case -- returning")
         return pages
     // Recursive case
     } else {
-        console.log("Recursive case")
+        //console.log("Recursive case")
         const normCurr = normalizeURL(curr);
 
         if (pages.hasOwnProperty(normCurr)) {
             pages[normCurr] += 1;
+            return pages;
         } else {
             pages[normCurr] = 1
         }
@@ -28,11 +29,12 @@ export const crawlPage = async (
 
         // Recursive calls
         const links = getURLsFromHTML(htmlText, base);
-        console.log(`Found ${links.length} recursive calls`)
+        //console.log(`Found ${links.length} recursive calls`)
         for(let i = 0; i < links.length; i++){
-            console.log(`Making a recursive call to ${links[i]}`)
-            return crawlPage(base, links[i], pages)
+            //console.log(`Making a recursive call to ${links[i]}`)
+            crawlPage(base, links[i], pages)
         }
+        return pages
     }
     return pages
 };

@@ -1,43 +1,81 @@
-import { JSDOM } from 'jsdom'
-import { argv } from 'node:process'; // first arg - pathname of executable, second arg - path to js file being executed, 3+ -- provided by user
+import { JSDOM } from "jsdom";
+import { argv } from "node:process"; // first arg - pathname of executable, second arg - path to js file being executed, 3+ -- provided by user
 
-export const getHTML = async (url : string) => {
-    const res = await fetch(url);
-    
-    if (res.status > 400 ) {
-        console.log("Error");
-        return;
-    } else if (!res.headers.get("content-type")!.includes("text/html")) {
-        console.log("Error");
-        return;
+export const crawlPage = async (
+  base: string,
+  curr: string = base,
+  pages: Record<string, number> = {}
+) : Promise<Record<string, number>> => {
+    const links = getURLsFromHTML(curr, base);
+
+    // Base case
+    if (curr != base) {
+        console.log("Base case -- returning")
+        return pages
+    // Recursive case
     } else {
-            //const dom = new JSDOM(await res.text());
-            //console.log(dom.window.document.querySelector("body"))
-            console.log(await res.text())
+        console.log("Recursive case")
+        const normCurr = normalizeURL(curr);
+
+        if (pages.hasOwnProperty(normCurr)) {
+            pages[normCurr] += 1;
+        } else {
+            pages[normCurr] = 1
+        }
+
+        const htmlText = await getHTML(curr);
+        //console.log(htmlText);
+
+        // Recursive calls
+        const links = getURLsFromHTML(htmlText, base);
+        console.log(`Found ${links.length} recursive calls`)
+        for(let i = 0; i < links.length; i++){
+            console.log(`Making a recursive call to ${links[i]}`)
+            return crawlPage(base, links[i], pages)
+        }
     }
-}
+    return pages
+};
+export const getHTML = async (url: string): Promise<string> => {
+  const res = await fetch(url);
 
-export const getURLsFromHTML = (html : string, baseURL : string) : string[] => {
-    const dom = new JSDOM(html);
-    
-    // returns special type not standard array - can't use array methods
-    const anchors : NodeListOf<HTMLAnchorElement> = dom.window.document.querySelectorAll('a');
+  if (res.status > 400) {
+    console.log("Error");
+    return "";
+  } else if (!res.headers.get("content-type")!.includes("text/html")) {
+    console.log("Error");
+    return "";
+  } else {
+    const text = await res.text();
+    //console.log(text);
+    return text;
+  }
+};
 
-    let urls : string[] = [];
+export const getURLsFromHTML = (html: string, baseURL: string): string[] => {
+  const dom = new JSDOM(html);
 
-    for(let i=0; i < anchors.length; i++) {
-        let href = anchors[i].getAttribute("href");
+  // returns special type not standard array - can't use array methods
+  const anchors: NodeListOf<HTMLAnchorElement> =
+    dom.window.document.querySelectorAll("a");
 
-        const isRelative = href !== null && !(href.startsWith("http://") || href.startsWith("https://"));
-        
-        if (isRelative) {
-            href = baseURL + href;
-        };
+  let urls: string[] = [];
 
-        href ? urls.push(href) : console.log("no href for anchor")
+  for (let i = 0; i < anchors.length; i++) {
+    let href = anchors[i].getAttribute("href");
+
+    const isRelative =
+      href !== null &&
+      !(href.startsWith("http://") || href.startsWith("https://"));
+
+    if (isRelative) {
+      href = baseURL + href;
     }
 
-    return urls;
+    href ? urls.push(href) : console.log("no href for anchor");
+  }
+
+  return urls;
 };
 
 export const normalizeURL = (url: string): string => {
@@ -55,17 +93,18 @@ export const normalizeURL = (url: string): string => {
 };
 
 const main = async () => {
+  if (argv.length === 3) {
+    console.log(argv[2]);
+    //process.exit(0);
+  } else {
+    process.exit(1);
+  }
 
-    if(argv.length === 3) {
-        console.log(argv[2]);
-        //process.exit(0);
-    } else {
-        process.exit(1);
-    }
+  const BASE_URL = argv[2];
 
-    const BASE_URL = argv[2];
-
-    await getHTML(BASE_URL)
+  //await getHTML(BASE_URL);
+  const pages = await crawlPage(BASE_URL);
+  console.log(pages)
 };
 
 main();

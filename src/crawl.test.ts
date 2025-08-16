@@ -1,7 +1,6 @@
 import {expect, test} from 'vitest'
 import { normalizeURL, getURLsFromHTML } from './crawl'
 
-
 // Get URL's from HTML
 test("Get all URLs from a HTML string", () => {
     const input1 = `<html>

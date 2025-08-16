@@ -1,4 +1,6 @@
 import { JSDOM } from 'jsdom'
+import { argv } from 'node:process'; // first arg - pathname of executable, second arg - path to js file being executed, 3+ -- provided by user
+
 
 export const getURLsFromHTML = (html : string, baseURL : string) : string[] => {
     const dom = new JSDOM(html);
@@ -21,8 +23,7 @@ export const getURLsFromHTML = (html : string, baseURL : string) : string[] => {
     }
 
     return urls;
-}
-
+};
 
 export const normalizeURL = (url: string): string => {
   const removePrefix = (url: string, prefix: string) =>
@@ -38,4 +39,14 @@ export const normalizeURL = (url: string): string => {
   );
 };
 
+const main = () => {
+    if(argv.length === 3) {
+        console.log(argv[2]);
+        process.exit(0);
+    } else {
+        process.exit(1);
+    }
 
+};
+
+main();
